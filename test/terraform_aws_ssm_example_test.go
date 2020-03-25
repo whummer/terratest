@@ -6,37 +6,37 @@ import (
 
 	"github.com/gruntwork-io/terratest/modules/aws"
 	"github.com/gruntwork-io/terratest/modules/terraform"
-	"github.com/stretchr/testify/require"
 )
 
 func TestTerraformAwsSsmExample(t *testing.T) {
 	t.Parallel()
-	region := aws.GetRandomStableRegion(t, nil, nil)
+	region := "us-east-2"
 
 	terraformOptions := &terraform.Options{
 		TerraformDir: "../examples/terraform-aws-ssm-example",
-		Vars: map[string]interface{}{
-			"region": region,
-		},
 	}
 	defer terraform.Destroy(t, terraformOptions)
 
 	terraform.InitAndApply(t, terraformOptions)
 
 	instanceID := terraform.Output(t, terraformOptions, "instance_id")
-	timeout := 3 * time.Minute
+	timeout, _ := time.ParseDuration("3m")
 
+	// website::tag::1:: Wait for the instance to appear in the SSM catalog
 	aws.WaitForSsmInstance(t, region, instanceID, timeout)
 
-	result := aws.CheckSsmCommand(t, region, instanceID, "echo Hello, World", timeout)
-	require.Equal(t, result.Stdout, "Hello, World\n")
-	require.Equal(t, result.Stderr, "")
-	require.Equal(t, int64(0), result.ExitCode)
+	// website::tag::2:: Run a command and check its result
+	stdout, stderr := aws.CheckSsmCommand(t, region, instanceID, "echo Hello, World", timeout)
+	if stdout != "Hello, World\n" {
+		t.Fatalf("Wrong value for stdout: %q", stdout)
+	}
+	if stderr != "" {
+		t.Fatalf("Wrong value for stderr: %q", stderr)
+	}
 
-	result, err := aws.CheckSsmCommandE(t, region, instanceID, "cat /wrong/file", timeout)
-	require.Error(t, err)
-	require.Equal(t, "Failed", err.Error())
-	require.Equal(t, "cat: /wrong/file: No such file or directory\nfailed to run commands: exit status 1", result.Stderr)
-	require.Equal(t, "", result.Stdout)
-	require.Equal(t, int64(1), result.ExitCode)
+	// website::tag::3:: Run a command and get the error
+	_, _, err := aws.CheckSsmCommandE(t, region, instanceID, "false", timeout)
+	if err.Error() != "Failed" {
+		t.Fatalf("Wrong value for error: %q", err.Error())
+	}
 }
