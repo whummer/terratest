@@ -262,15 +262,7 @@ workflows:
             tags:
               only: /^v.*/
 
-      - deploy:
-          context:
-            - Gruntwork Admin
-          requires:
-            - test
-            - kubernetes_test
-            - helm_test
-          filters:
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
+      # specify any bash command here prefixed with `run: `
+      - run: go get -v -t -d ./...
+      - run: go test -v ./...
+      
