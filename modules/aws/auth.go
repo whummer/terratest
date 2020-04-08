@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
+	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/iam"
 	"github.com/aws/aws-sdk-go/service/sts"
@@ -155,43 +156,22 @@ func (err CredentialsError) Error() string {
 }
 
 func getNewSession(config *aws.Config) (*session.Session, error) {
-	customConfig := GetAwsConfigOverrides()
 
-	if customConfig != nil {
-		config = awsConfigMapper(customConfig)
+	if GlobalCustomEndpoints != nil {
+		config.WithS3ForcePathStyle(true).WithEndpointResolver(endpoints.ResolverFunc(endPointsCustomResolver))
 	}
 
 	return session.NewSession(config)
 }
 
-func awsConfigMapper(customConfig *AwsConfigOverrides) *aws.Config {
-	WithS3ForcePathStyle := true
-	awsConfig := &aws.Config{
-		S3ForcePathStyle:                  &WithS3ForcePathStyle,
-		Region:                            customConfig.Region,
-		Endpoint:                          customConfig.Endpoint,
-		CredentialsChainVerboseErrors:     customConfig.CredentialsChainVerboseErrors,
-		Credentials:                       customConfig.Credentials,
-		EndpointResolver:                  customConfig.EndpointResolver,
-		EnforceShouldRetryCheck:           customConfig.EnforceShouldRetryCheck,
-		DisableSSL:                        customConfig.DisableSSL,
-		HTTPClient:                        customConfig.HTTPClient,
-		MaxRetries:                        customConfig.MaxRetries,
-		Retryer:                           customConfig.Retryer,
-		DisableParamValidation:            customConfig.DisableParamValidation,
-		DisableComputeChecksums:           customConfig.DisableComputeChecksums,
-		S3Disable100Continue:              customConfig.S3Disable100Continue,
-		S3UseAccelerate:                   customConfig.S3UseAccelerate,
-		S3DisableContentMD5Validation:     customConfig.S3DisableContentMD5Validation,
-		S3UseARNRegion:                    customConfig.S3UseARNRegion,
-		EC2MetadataDisableTimeoutOverride: customConfig.EC2MetadataDisableTimeoutOverride,
-		UseDualStack:                      customConfig.UseDualStack,
-		SleepDelay:                        customConfig.SleepDelay,
-		DisableRestProtocolURICleaning:    customConfig.DisableRestProtocolURICleaning,
-		EnableEndpointDiscovery:           customConfig.EnableEndpointDiscovery,
-		DisableEndpointHostPrefix:         customConfig.DisableEndpointHostPrefix,
-		STSRegionalEndpoint:               customConfig.STSRegionalEndpoint,
-		S3UsEast1RegionalEndpoint:         customConfig.S3UsEast1RegionalEndpoint}
+func endPointsCustomResolver(service, region string, optionalFunctions ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
+	customServiceEndpoint := (*GlobalCustomEndpoints)[service]
+	if customServiceEndpoint != "" {
+		return endpoints.ResolvedEndpoint{
+			URL:           customServiceEndpoint,
+			SigningRegion: "custom-signing-region",
+		}, nil
+	}
 
-	return awsConfig
+	return endpoints.DefaultResolver().EndpointFor(service, region, optionalFunctions...)
 }
