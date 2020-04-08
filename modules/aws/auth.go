@@ -154,20 +154,17 @@ func (err CredentialsError) Error() string {
 	return fmt.Sprintf("Error finding AWS credentials. Did you set the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables or configure an AWS profile? Underlying error: %v", err.UnderlyingErr)
 }
 
-func getNewSession(c *aws.Config) (*session.Session, error) {
-	var config *aws.Config
-	customConfig := GetCustomConfig()
+func getNewSession(config *aws.Config) (*session.Session, error) {
+	customConfig := GetAwsConfigOverrides()
 
 	if customConfig != nil {
-		config = getAwsConfigFromCustomConfig(customConfig)
-	} else {
-		config = c
+		config = mapAwsConfigFromCustomConfig(customConfig)
 	}
 
 	return session.NewSession(config)
 }
 
-func getAwsConfigFromCustomConfig(customConfig *Config) *aws.Config {
+func mapAwsConfigFromCustomConfig(customConfig *AwsConfigOverrides) *aws.Config {
 	WithS3ForcePathStyle := true
 	awsConfig := &aws.Config{
 		S3ForcePathStyle:                  &WithS3ForcePathStyle,

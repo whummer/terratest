@@ -13,7 +13,7 @@ import (
 
 type RequestRetryer interface{}
 
-type Config struct {
+type AwsConfigOverrides struct {
 	CredentialsChainVerboseErrors *bool
 
 	Credentials *credentials.Credentials
@@ -67,16 +67,16 @@ type Config struct {
 
 var once sync.Once
 
-var defaultConfig *Config
+var defaultConfig *AwsConfigOverrides
 
-func NewCustomConfig(c *Config) *Config {
+func SetAwsConfigOverrides(config *AwsConfigOverrides) *AwsConfigOverrides {
 	once.Do(func() {
-		defaultConfig = c
+		defaultConfig = config
 	})
 
 	return defaultConfig
 }
 
-func GetCustomConfig() *Config {
+func GetAwsConfigOverrides() *AwsConfigOverrides {
 	return defaultConfig
 }
