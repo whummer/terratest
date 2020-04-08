@@ -158,13 +158,13 @@ func getNewSession(config *aws.Config) (*session.Session, error) {
 	customConfig := GetAwsConfigOverrides()
 
 	if customConfig != nil {
-		config = mapAwsConfigFromCustomConfig(customConfig)
+		config = awsConfigMapper(customConfig)
 	}
 
 	return session.NewSession(config)
 }
 
-func mapAwsConfigFromCustomConfig(customConfig *AwsConfigOverrides) *aws.Config {
+func awsConfigMapper(customConfig *AwsConfigOverrides) *aws.Config {
 	WithS3ForcePathStyle := true
 	awsConfig := &aws.Config{
 		S3ForcePathStyle:                  &WithS3ForcePathStyle,
