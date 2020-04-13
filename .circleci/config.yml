@@ -262,7 +262,26 @@ workflows:
             tags:
               only: /^v.*/
 
-      # specify any bash command here prefixed with `run: `
-      - run: go get -v -t -d ./...
-      - run: go test -v ./...
-      
+      - run:
+          name: run tests
+          command: |
+            mkdir -p /tmp/logs
+            run-go-tests --path test --timeout 2h | tee /tmp/logs/all.log
+          no_output_timeout: 3600s
+
+      - run:
+          command: terratest_log_parser --testlog /tmp/logs/all.log --outputdir /tmp/logs
+          when: always
+      - store_artifacts:
+          path: /tmp/logs
+      - store_test_results:
+          path: /tmp/logs
+
+workflows:
+  version: 2
+  build-and-test:
+    jobs:
+      - test:
+          filters:
+            tags:
+              only: /^v.*/
