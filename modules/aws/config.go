@@ -7,10 +7,8 @@ import (
 var once sync.Once
 var GlobalCustomEndpoints *map[string]string
 
-func SetAwsEndpointsOverrides(endpoints *map[string]string) *map[string]string {
+func SetAwsEndpointsOverrides(endpoints *map[string]string) {
 	once.Do(func() {
 		GlobalCustomEndpoints = endpoints
 	})
-
-	return GlobalCustomEndpoints
 }
