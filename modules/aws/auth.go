@@ -157,7 +157,7 @@ func (err CredentialsError) Error() string {
 
 func getNewSession(config *aws.Config) (*session.Session, error) {
 
-	if GlobalCustomEndpoints != nil {
+	if len(*GlobalCustomEndpoints) > 0 {
 		config.WithS3ForcePathStyle(true).WithEndpointResolver(endpoints.ResolverFunc(endPointsCustomResolver))
 	}
 
@@ -165,8 +165,8 @@ func getNewSession(config *aws.Config) (*session.Session, error) {
 }
 
 func endPointsCustomResolver(service, region string, optionalFunctions ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
-	customServiceEndpoint := (*GlobalCustomEndpoints)[service]
-	if customServiceEndpoint != "" {
+	customServiceEndpoint, hasEndpoint := (*GlobalCustomEndpoints)[service]
+	if hasEndpoint {
 		return endpoints.ResolvedEndpoint{
 			URL:           customServiceEndpoint,
 			SigningRegion: "custom-signing-region",
