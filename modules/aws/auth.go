@@ -155,6 +155,8 @@ func (err CredentialsError) Error() string {
 	return fmt.Sprintf("Error finding AWS credentials. Did you set the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables or configure an AWS profile? Underlying error: %v", err.UnderlyingErr)
 }
 
+// The goal of this function is handle the aws custom endpoint configuration
+// focus to use any tool (i.e: localstack) to allow us do tests locally or isolated
 func getNewSession(config *aws.Config) (*session.Session, error) {
 
 	if len(*GlobalCustomEndpoints) > 0 {
