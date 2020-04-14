@@ -1,6 +1,6 @@
 defaults: &defaults
   docker:
-    - image: 087285199408.dkr.ecr.us-east-1.amazonaws.com/circle-ci-test-image-base:go1.13
+    - image: circleci/golang:1.13
 
 version: 2.0
 jobs:
