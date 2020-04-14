@@ -21,3 +21,6 @@ vendor
 .DS_Store
 # Intermediate file for testing
 kubeconfig
+
+*.lock
+*.toml
