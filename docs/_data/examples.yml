@@ -81,13 +81,13 @@
   name: Azure Hello, World Example
   image: /assets/img/logos/azure-logo.png
   files:
-    - url: /examples/azure/terraform-azure-example/main.tf
+    - url: /examples/terraform-azure-example/main.tf
       id: terraform_main_code
-    - url: /examples/azure/terraform-azure-example/outputs.tf
+    - url: /examples/terraform-azure-example/outputs.tf
       id: terraform_output_code
-    - url: /examples/azure/terraform-azure-example/variables.tf
+    - url: /examples/terraform-azure-example/variables.tf
       id: terraform_var_code
-    - url: /test/azure/terraform_azure_example_test.go
+    - url: /test/terraform_azure_example_test.go
       id: test_code
       default: true
   learn_more:
