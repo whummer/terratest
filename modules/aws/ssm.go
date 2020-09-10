@@ -2,7 +2,6 @@ package aws
 
 import (
 	"fmt"
-	"regexp"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -81,22 +80,20 @@ func WaitForSsmInstanceE(t testing.TestingT, awsRegion, instanceID string, timeo
 	maxRetries := int(timeout.Seconds() / timeBetweenRetries.Seconds())
 	description := fmt.Sprintf("Waiting for %s to appear in the SSM inventory", instanceID)
 
-	key := aws.String("AWS:InstanceInformation.InstanceId")
-	filterType := aws.String("Equal")
-	values := aws.StringSlice([]string{instanceID})
+	input := &ssm.GetInventoryInput{
+		Filters: []*ssm.InventoryFilter{
+			{
+				Key:    aws.String("AWS:InstanceInformation.InstanceId"),
+				Type:   aws.String("Equal"),
+				Values: aws.StringSlice([]string{instanceID}),
+			},
+		},
+	}
 	_, err := retry.DoWithRetryE(t, description, maxRetries, timeBetweenRetries, func() (string, error) {
 		client := NewSsmClient(t, awsRegion)
-		req, resp := client.GetInventoryRequest(&ssm.GetInventoryInput{
-			Filters: []*ssm.InventoryFilter{
-				{
-					Key:    key,
-					Type:   filterType,
-					Values: values,
-				},
-			},
-		})
+		resp, err := client.GetInventory(input)
 
-		if err := req.Send(); err != nil {
+		if err != nil {
 			return "", err
 		}
 
@@ -116,23 +113,23 @@ func WaitForSsmInstance(t testing.TestingT, awsRegion, instanceID string, timeou
 	require.NoError(t, err)
 }
 
-// CheckSsmCommand checks that you can run the given command on the given instance through AWS SSM. Returns stdout and stderr.
-func CheckSsmCommand(t testing.TestingT, awsRegion, instanceID, command string, timeout time.Duration) (string, string) {
-	stdout, stderr, err := CheckSsmCommandE(t, awsRegion, instanceID, command, timeout)
-	if err != nil {
-		t.Fatalf("failed to execute '%s' on %s (%v):]\n  stdout: %#v\n  stderr: %#v", command, instanceID, err, stdout, stderr)
-	}
-	return stdout, stderr
+// CheckSsmCommand checks that you can run the given command on the given instance through AWS SSM.
+func CheckSsmCommand(t testing.TestingT, awsRegion, instanceID, command string, timeout time.Duration) *CommandOutput {
+	result, err := CheckSsmCommandE(t, awsRegion, instanceID, command, timeout)
+	require.NoErrorf(t, err, "failed to execute '%s' on %s (%v):]\n  stdout: %#v\n  stderr: %#v", command, instanceID, err, result.Stdout, result.Stderr)
+	return result
 }
 
-type result struct {
-	Stdout string
-	Stderr string
+// CommandOutput contains the result of the SSM command.
+type CommandOutput struct {
+	Stdout   string
+	Stderr   string
+	ExitCode int64
 }
 
-// CheckSsmCommandE checks that you can run the given command on the given instance through AWS SSM. Returns the stdout, stderr and an error if one occurs.
-func CheckSsmCommandE(t testing.TestingT, awsRegion, instanceID, command string, timeout time.Duration) (string, string, error) {
-	logger.Logf(t, "Running command %s on %s", command, instanceID)
+// CheckSsmCommandE checks that you can run the given command on the given instance through AWS SSM. Returns the result and an error if one occurs.
+func CheckSsmCommandE(t testing.TestingT, awsRegion, instanceID, command string, timeout time.Duration) (*CommandOutput, error) {
+	logger.Logf(t, "Running command '%s' on EC2 instance with ID '%s'", command, instanceID)
 
 	timeBetweenRetries := 2 * time.Second
 	maxRetries := int(timeout.Seconds() / timeBetweenRetries.Seconds())
@@ -140,20 +137,18 @@ func CheckSsmCommandE(t testing.TestingT, awsRegion, instanceID, command string,
 	// Now that we know the instance in the SSM inventory, we can send the command
 	client, err := NewSsmClientE(t, awsRegion)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
-	comment := "Terratest SSM"
-	documentName := "AWS-RunShellScript"
-	req, resp := client.SendCommandRequest(&ssm.SendCommandInput{
-		Comment:      &comment,
-		DocumentName: &documentName,
-		InstanceIds:  []*string{&instanceID},
+	resp, err := client.SendCommand(&ssm.SendCommandInput{
+		Comment:      aws.String("Terratest SSM"),
+		DocumentName: aws.String("AWS-RunShellScript"),
+		InstanceIds:  aws.StringSlice([]string{instanceID}),
 		Parameters: map[string][]*string{
-			"commands": []*string{&command},
+			"commands": aws.StringSlice([]string{command}),
 		},
 	})
-	if err := req.Send(); err != nil {
-		return "", "", err
+	if err != nil {
+		return nil, err
 	}
 
 	// Wait for the result
@@ -164,39 +159,41 @@ func CheckSsmCommandE(t testing.TestingT, awsRegion, instanceID, command string,
 		"bad status: InProgress": "bad status: InProgress",
 		"bad status: Delayed":    "bad status: Delayed",
 	}
-	var stdout, stderr string
+
+	result := &CommandOutput{}
 	_, err = retry.DoWithRetryableErrorsE(t, description, retryableErrors, maxRetries, timeBetweenRetries, func() (string, error) {
-		req, resp := client.GetCommandInvocationRequest(&ssm.GetCommandInvocationInput{
+		resp, err := client.GetCommandInvocation(&ssm.GetCommandInvocationInput{
 			CommandId:  resp.Command.CommandId,
 			InstanceId: &instanceID,
 		})
-		if err := req.Send(); err != nil {
+
+		if err != nil {
 			return "", err
 		}
 
-		// Remove the SSM prefix from stderr
-		stderr = aws.StringValue(resp.StandardErrorContent)
-		prefix := regexp.MustCompile(`/var/lib/amazon/ssm/.*/_script\.sh: line 1: `)
-		stderr = prefix.ReplaceAllString(stderr, "")
-
-		stdout = aws.StringValue(resp.StandardOutputContent)
+		result.Stderr = aws.StringValue(resp.StandardErrorContent)
+		result.Stdout = aws.StringValue(resp.StandardOutputContent)
+		result.ExitCode = aws.Int64Value(resp.ResponseCode)
 
 		status := aws.StringValue(resp.Status)
 
-		if status == "Success" {
+		if status == ssm.CommandInvocationStatusSuccess {
 			return "", nil
 		}
 
-		if status == "Failed" {
-			return "", fmt.Errorf("Failed")
+		if status == ssm.CommandInvocationStatusFailed {
+			return "", fmt.Errorf(aws.StringValue(resp.StatusDetails))
 		}
 
 		return "", fmt.Errorf("bad status: %s", status)
 	})
 
 	if err != nil {
-		return stdout, stderr, err.(retry.FatalError).Underlying
+		if actualErr, ok := err.(retry.FatalError); ok {
+			return result, actualErr.Underlying
+		}
+		return result, fmt.Errorf("Unexpected error: %v", err)
 	}
 
-	return stdout, stderr, nil
+	return result, nil
 }

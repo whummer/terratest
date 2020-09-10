@@ -2,6 +2,7 @@ package terraform
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"strconv"
@@ -50,11 +51,21 @@ func OutputRequiredE(t testing.TestingT, options *Options, key string) (string, 
 	return out, nil
 }
 
+// parseListOfMaps takes a list of maps and parses the types.
+// It is mainly a wrapper for parseMap to support lists.
 func parseListOfMaps(l []interface{}) ([]map[string]interface{}, error) {
 	var result []map[string]interface{}
 
 	for _, v := range l {
-		m, err := parseMap(v.(map[string]interface{}))
+
+		asMap, isMap := v.(map[string]interface{})
+		if !isMap {
+			err := errors.New("Type switching to map[string]interface{} failed.")
+			return nil, err
+		}
+
+		m, err := parseMap(asMap)
+
 		if err != nil {
 			return nil, err
 		}
@@ -65,35 +76,44 @@ func parseListOfMaps(l []interface{}) ([]map[string]interface{}, error) {
 
 }
 
-// parseMap takes a map of interfaces and parses the types. Is also recursive for nested objects.
+// parseMap takes a map of interfaces and parses the types.
+// It is recursive which allows it to support complex nested structures.
+// At this time, this function uses https://golang.org/pkg/strconv/#ParseInt
+// to determine if a number should be a float or an int. For this reason, if you are
+// expecting a float with a zero as the "tenth" you will need to manually convert
+// the return value to a float.
+//
+// This function exists to map return values of the terraform outputs to intuitive
+// types. ie, if you are expecting a value of "1" you are implicitly expecting an int.
+//
+// This also allows the work to be executed recursively to support complex data types.
 func parseMap(m map[string]interface{}) (map[string]interface{}, error) {
 
-	var result map[string]interface{}
-	result = make(map[string]interface{})
+	result := make(map[string]interface{})
 
 	for k, v := range m {
-		switch v.(type) {
+		switch vt := v.(type) {
 		case map[string]interface{}:
-			nestedMap, err := parseMap(v.(map[string]interface{}))
+			nestedMap, err := parseMap(vt)
 			if err != nil {
 				return nil, err
 			}
 			result[k] = nestedMap
 		case []interface{}:
-			nestedList, err := parseListOfMaps(v.([]interface{}))
+			nestedList, err := parseListOfMaps(vt)
 			if err != nil {
 				return nil, err
 			}
 			result[k] = nestedList
-		default:
-			// Test for int conversion
-			testInt, err := strconv.ParseInt((fmt.Sprintf("%v", v)), 10, 0)
+		case float64:
+			testInt, err := strconv.ParseInt((fmt.Sprintf("%v", vt)), 10, 0)
 			if err == nil {
 				result[k] = int(testInt)
-				continue
+			} else {
+				result[k] = vt
 			}
-
-			result[k] = fmt.Sprintf("%v", v)
+		default:
+			result[k] = vt
 		}
 
 	}
@@ -101,12 +121,17 @@ func parseMap(m map[string]interface{}) (map[string]interface{}, error) {
 	return result, nil
 }
 
+// OutputMapOfObjects calls terraform output for the given variable and returns its value as a map of lists/maps.
+// If the output value is not a map of lists/maps, then it fails the test.
 func OutputMapOfObjects(t testing.TestingT, options *Options, key string) map[string]interface{} {
 	out, err := OutputMapOfObjectsE(t, options, key)
 	require.NoError(t, err)
 	return out
 }
 
+// OutputMapOfObjectsE calls terraform output for the given variable and returns its value as a map of lists/maps.
+// Also returns an error object if an error was generated.
+// If the output value is not a map of lists/maps, then it fails the test.
 func OutputMapOfObjectsE(t testing.TestingT, options *Options, key string) (map[string]interface{}, error) {
 	out, err := RunTerraformCommandAndGetStdoutE(t, options, "output", "-no-color", "-json", key)
 
@@ -120,27 +145,20 @@ func OutputMapOfObjectsE(t testing.TestingT, options *Options, key string) (map[
 		return nil, err
 	}
 
-	var result map[string]interface{}
-
-	result, err = parseMap(output)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
+	return parseMap(output)
 }
 
-// OutputListOfObjects calls terraform output for the given variable and returns its value as a list of maps.
-// If the output value is not a list of maps, then it fails the test.
+// OutputListOfObjects calls terraform output for the given variable and returns its value as a list of maps/lists.
+// If the output value is not a list of maps/lists, then it fails the test.
 func OutputListOfObjects(t testing.TestingT, options *Options, key string) []map[string]interface{} {
 	out, err := OutputListOfObjectsE(t, options, key)
 	require.NoError(t, err)
 	return out
 }
 
-// OutputListOfObjectsE calls terraform output for the given variable and returns its value as a list of maps.
-// If the output value is not a list of maps, then it returns an error.
+// OutputListOfObjectsE calls terraform output for the given variable and returns its value as a list of maps/lists.
+// Also returns an error object if an error was generated.
+// If the output value is not a list of maps/lists, then it fails the test.
 func OutputListOfObjectsE(t testing.TestingT, options *Options, key string) ([]map[string]interface{}, error) {
 	out, err := RunTerraformCommandAndGetStdoutE(t, options, "output", "-no-color", "-json", key)
 
