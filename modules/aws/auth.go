@@ -159,7 +159,7 @@ func (err CredentialsError) Error() string {
 // focus to use any tool (i.e: localstack) to allow us do tests locally or isolated
 func getNewSession(config *aws.Config) (*session.Session, error) {
 
-	if len(*GlobalCustomEndpoints) > 0 {
+	if HasAwsCustomEndPoints() {
 		config.WithS3ForcePathStyle(true).WithEndpointResolver(endpoints.ResolverFunc(endPointsCustomResolver))
 	}
 
@@ -167,8 +167,8 @@ func getNewSession(config *aws.Config) (*session.Session, error) {
 }
 
 func endPointsCustomResolver(service, region string, optionalFunctions ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
-	customServiceEndpoint, hasEndpoint := (*GlobalCustomEndpoints)[service]
-	if hasEndpoint {
+	customServiceEndpoint, endpointShouldBeOverride := EndpointShouldBeOverride(service)
+	if endpointShouldBeOverride {
 		return endpoints.ResolvedEndpoint{
 			URL:           customServiceEndpoint,
 			SigningRegion: "custom-signing-region",
