@@ -62,10 +62,10 @@ func TestSetAwsEndpointsOverridesShouldNotAllowSetCustomoEndpointsMoreThanOnce(t
 	assert.Contains(t, messageReceived, messageExpected)
 }
 
-func TestEndpointShouldBeOverrideShouldReturnFalseIfTheServiceDoesNotExist(t *testing.T) {
+func TestEndpointShouldBeOverrideShouldReturnFalseIfTheServiceToReplaceDoesNotExist(t *testing.T) {
 
 	SetAwsEndpointsOverrides(localEndpoints)
-	customServiceEndpoint, endpointShouldBeOverride := EndpointShouldBeOverride("service-not-exist")
+	customServiceEndpoint, endpointShouldBeOverride := EndpointShouldBeOverride("service-to-replace-does-not-exist")
 
 	assert.Empty(t, customServiceEndpoint)
 	assert.False(t, endpointShouldBeOverride)
