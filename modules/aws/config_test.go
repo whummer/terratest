@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/aws/endpoints"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -75,9 +76,9 @@ func TestEndpointShouldBeOverrideShouldReturnFalseIfTheServiceToReplaceDoesNotEx
 func TestEndpointShouldBeOverrideShouldReturnFalseIfTheServiceToReplaceExist(t *testing.T) {
 	t.Parallel()
 
-	endpointURLExpected := localEndpoints["s3"]
+	endpointURLExpected := localEndpoints[endpoints.S3ServiceID]
 	SetAwsEndpointsOverrides(localEndpoints)
-	customServiceEndpointURL, endpointShouldBeOverride := EndpointShouldBeOverride("s3")
+	customServiceEndpointURL, endpointShouldBeOverride := EndpointShouldBeOverride(endpoints.S3ServiceID)
 
 	assert.NotEmpty(t, customServiceEndpointURL)
 	assert.Equal(t, endpointURLExpected, customServiceEndpointURL)
