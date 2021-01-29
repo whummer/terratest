@@ -75,11 +75,11 @@ func TestEndpointShouldBeOverrideShouldReturnFalseIfTheServiceToReplaceDoesNotEx
 func TestEndpointShouldBeOverrideShouldReturnFalseIfTheServiceToReplaceExist(t *testing.T) {
 	t.Parallel()
 
-	endpointExpected := localEndpoints["s3"]
+	endpointURLExpected := localEndpoints["s3"]
 	SetAwsEndpointsOverrides(localEndpoints)
-	customServiceEndpoint, endpointShouldBeOverride := EndpointShouldBeOverride("s3")
+	customServiceEndpointURL, endpointShouldBeOverride := EndpointShouldBeOverride("s3")
 
-	assert.NotEmpty(t, customServiceEndpoint)
-	assert.Equal(t, endpointExpected, customServiceEndpoint)
+	assert.NotEmpty(t, customServiceEndpointURL)
+	assert.Equal(t, endpointURLExpected, customServiceEndpointURL)
 	assert.True(t, endpointShouldBeOverride)
 }
