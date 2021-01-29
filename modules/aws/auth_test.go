@@ -8,6 +8,8 @@ import (
 )
 
 func TestNewAuthenticatedSessionFromDefaultCredentialsShouldReturnCustomEnpointURLForS3Service(t *testing.T) {
+	t.Parallel()
+
 	const signingRegionExpected = "custom-signing-region"
 	region := GetRandomStableRegion(t, nil, nil)
 
