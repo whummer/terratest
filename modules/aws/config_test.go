@@ -63,6 +63,7 @@ func TestSetAwsEndpointsOverridesShouldNotAllowSetCustomoEndpointsMoreThanOnce(t
 }
 
 func TestEndpointShouldBeOverrideShouldReturnFalseIfTheServiceToReplaceDoesNotExist(t *testing.T) {
+	t.Parallel()
 
 	SetAwsEndpointsOverrides(localEndpoints)
 	customServiceEndpoint, endpointShouldBeOverride := EndpointShouldBeOverride("service-to-replace-does-not-exist")
@@ -72,10 +73,13 @@ func TestEndpointShouldBeOverrideShouldReturnFalseIfTheServiceToReplaceDoesNotEx
 }
 
 func TestEndpointShouldBeOverrideShouldReturnFalseIfTheServiceToReplaceExist(t *testing.T) {
+	t.Parallel()
 
+	endpointExpected := localEndpoints["s3"]
 	SetAwsEndpointsOverrides(localEndpoints)
 	customServiceEndpoint, endpointShouldBeOverride := EndpointShouldBeOverride("s3")
 
 	assert.NotEmpty(t, customServiceEndpoint)
+	assert.Equal(t, endpointExpected, customServiceEndpoint)
 	assert.True(t, endpointShouldBeOverride)
 }

@@ -12,6 +12,7 @@ require (
 	github.com/aws/aws-lambda-go v1.13.3
 	github.com/aws/aws-sdk-go v1.27.1
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
+	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/cli v0.0.0-20200109221225-a4f60165b7a3 // indirect
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20190911111923-ecfe977594f1 // indirect
@@ -29,6 +30,7 @@ require (
 	github.com/miekg/dns v1.1.31
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/oracle/oci-go-sdk v7.1.0+incompatible
+	github.com/pmezard/go-difflib v1.0.0
 	github.com/pquerna/otp v1.2.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/stretchr/testify v1.4.0
@@ -39,6 +41,7 @@ require (
 	golang.org/x/tools v0.0.0-20200113040837-eac381796e91 // indirect
 	google.golang.org/api v0.15.0
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
+	gopkg.in/yaml.v2 v2.2.8
 	k8s.io/api v0.19.3
 	k8s.io/apimachinery v0.19.3
 	k8s.io/client-go v0.19.3
