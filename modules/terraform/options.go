@@ -25,6 +25,9 @@ var (
 		".*registry service is unreachable.*":             "Failed to retrieve plugin due to transient network error.",
 		".*Error installing provider.*":                   "Failed to retrieve plugin due to transient network error.",
 		".*Failed to query available provider packages.*": "Failed to retrieve plugin due to transient network error.",
+		".*timeout while waiting for plugin to start.*":   "Failed to retrieve plugin due to transient network error.",
+		".*timed out waiting for server handshake.*":      "Failed to retrieve plugin due to transient network error.",
+		"could not query provider registry for":           "Failed to retrieve plugin due to transient network error.",
 
 		// Provider bugs where the data after apply is not propagated. This is usually an eventual consistency issue, so
 		// retrying should self resolve it.
@@ -64,6 +67,7 @@ type Options struct {
 	Logger                   *logger.Logger         // Set a non-default logger that should be used. See the logger package for more info.
 	Parallelism              int                    // Set the parallelism setting for Terraform
 	PlanFilePath             string                 // The path to output a plan file to (for the plan command) or read one from (for the apply command)
+	PluginDir                string                 // The path of downloaded plugins to pass to the terraform init command (-plugin-dir)
 }
 
 // Clone makes a deep copy of most fields on the Options object and returns it.

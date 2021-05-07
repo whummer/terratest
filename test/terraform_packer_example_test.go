@@ -66,6 +66,9 @@ func TestTerraformPackerExample(t *testing.T) {
 
 // Build the AMI in packer-docker-example
 func buildAMI(t *testing.T, awsRegion string, workingDir string) {
+	// Some AWS regions are missing certain instance types, so pick an available type based on the region we picked
+	instanceType := aws.GetRecommendedInstanceType(t, awsRegion, []string{"t2.micro", "t3.micro"})
+
 	packerOptions := &packer.Options{
 		// The path to where the Packer template is located
 		Template: "../examples/packer-docker-example/build.json",
@@ -75,7 +78,8 @@ func buildAMI(t *testing.T, awsRegion string, workingDir string) {
 
 		// Variables to pass to our Packer build using -var options
 		Vars: map[string]string{
-			"aws_region": awsRegion,
+			"aws_region":    awsRegion,
+			"instance_type": instanceType,
 		},
 
 		// Configure retries for intermittent errors
@@ -115,6 +119,9 @@ func deployUsingTerraform(t *testing.T, awsRegion string, workingDir string) {
 	// Specify the text the EC2 Instance will return when we make HTTP requests to it.
 	instanceText := fmt.Sprintf("Hello, %s!", uniqueID)
 
+	// Some AWS regions are missing certain instance types, so pick an available type based on the region we picked
+	instanceType := aws.GetRecommendedInstanceType(t, awsRegion, []string{"t2.micro", "t3.micro"})
+
 	// Load the AMI ID saved by the earlier build_ami stage
 	amiID := test_structure.LoadAmiId(t, workingDir)
 
@@ -129,6 +136,7 @@ func deployUsingTerraform(t *testing.T, awsRegion string, workingDir string) {
 			"aws_region":    awsRegion,
 			"instance_name": instanceName,
 			"instance_text": instanceText,
+			"instance_type": instanceType,
 			"ami_id":        amiID,
 		},
 	})
