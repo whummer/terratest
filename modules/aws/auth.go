@@ -169,6 +169,7 @@ func getNewSession(config *aws.Config) (*session.Session, error) {
 
 	return session.NewSession(config)
 }
+
 func getNewSessionWithOptions(opts session.Options) (*session.Session, error) {
 	enableWithS3ForcePathStyle(&opts.Config)
 
