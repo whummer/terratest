@@ -31,7 +31,14 @@ func NewAuthenticatedSession(region string) (*session.Session, error) {
 
 // NewAuthenticatedSessionFromDefaultCredentials gets an AWS Session, checking that the user has credentials properly configured in their environment.
 func NewAuthenticatedSessionFromDefaultCredentials(region string) (*session.Session, error) {
-	sess, err := getNewSession(aws.NewConfig().WithRegion(region))
+	awsConfig := aws.NewConfig().WithRegion(region)
+
+	sessionOptions := session.Options{
+		Config:            *awsConfig,
+		SharedConfigState: session.SharedConfigEnable,
+	}
+
+	sess, err := getNewSessionWithOptions(sessionOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -158,12 +165,20 @@ func (err CredentialsError) Error() string {
 // The goal of this function is handle the aws custom endpoint configuration
 // focus to use any tool (i.e: localstack) to allow us do tests locally or isolated
 func getNewSession(config *aws.Config) (*session.Session, error) {
+	enableWithS3ForcePathStyle(config)
 
+	return session.NewSession(config)
+}
+func getNewSessionWithOptions(opts session.Options) (*session.Session, error) {
+	enableWithS3ForcePathStyle(&opts.Config)
+
+	return session.NewSessionWithOptions(opts)
+}
+
+func enableWithS3ForcePathStyle(config *aws.Config) {
 	if HasAwsCustomEndPoints() {
 		config.WithS3ForcePathStyle(true).WithEndpointResolver(endpoints.ResolverFunc(endPointsCustomResolver))
 	}
-
-	return session.NewSession(config)
 }
 
 func endPointsCustomResolver(service, region string, optionalFunctions ...func(*endpoints.Options)) (endpoints.ResolvedEndpoint, error) {
