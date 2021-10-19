@@ -11,14 +11,7 @@ require (
 	github.com/Azure/go-autorest/autorest/to v0.4.0 // indirect
 	github.com/Azure/go-autorest/autorest/validation v0.3.1 // indirect
 	github.com/aws/aws-lambda-go v1.13.3
-<<<<<<< HEAD
-	github.com/aws/aws-sdk-go v1.27.1
-	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
-	github.com/davecgh/go-spew v1.1.1
-	github.com/docker/cli v0.0.0-20200109221225-a4f60165b7a3 // indirect
-=======
 	github.com/aws/aws-sdk-go v1.40.56
->>>>>>> cb603f158b50492e429b17ea17bbbb1399a68a73
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20190911111923-ecfe977594f1 // indirect
 	github.com/ghodss/yaml v1.0.0
@@ -44,19 +37,6 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/tmccombs/hcl2json v0.3.3
 	github.com/urfave/cli v1.22.2
-<<<<<<< HEAD
-	github.com/zclconf/go-cty v1.2.1
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
-	golang.org/x/net v0.0.0-20201021035429-f5854403a974
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
-	golang.org/x/tools v0.0.0-20201110201400-7099162a900a // indirect
-	google.golang.org/api v0.15.0
-	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
-	gopkg.in/yaml.v2 v2.2.8
-	k8s.io/api v0.19.3
-	k8s.io/apimachinery v0.19.3
-	k8s.io/client-go v0.19.3
-=======
 	github.com/zclconf/go-cty v1.8.1
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
@@ -66,5 +46,4 @@ require (
 	k8s.io/api v0.20.6
 	k8s.io/apimachinery v0.20.6
 	k8s.io/client-go v0.20.6
->>>>>>> cb603f158b50492e429b17ea17bbbb1399a68a73
 )
